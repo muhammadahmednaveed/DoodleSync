@@ -361,3 +361,72 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Blazor
+*.blazor.config
+bin-Release/
+_content/
+.blazor/
+ServiceWorkerAssetsManifest.js
+service-worker.js
+service-worker.js.map
+appsettings.*.json
+!appsettings.example.json
+
+# Frontend development
+node_modules/
+dist/
+.cache/
+.parcel-cache/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+
+# Rider
+.idea/
+*.sln.iml
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+
+# ASP.NET Core
+appsettings.Development.json
+*.Development.json
+launchSettings.json
+Properties/launchSettings.json
+
+# Temporary files
+*.swp
+*.swo
+*~

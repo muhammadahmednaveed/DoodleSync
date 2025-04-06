@@ -1,0 +1,130 @@
+@page "/whiteboard/{BoardId:guid}"
+@using Excubo.Blazor.Canvas
+@using MyWhiteboard.Client.Services
+@using MyWhiteboard.Shared
+@inject SignalRService SignalRService
+@inject HttpClient Http
+@implements IAsyncDisposable
+
+<div class="whiteboard-container">
+    <Canvas @ref="canvas" height="600" width="800" />
+</div>
+
+@code {
+    [Parameter]
+    public Guid BoardId { get; set; }
+
+    private Canvas? canvas;
+    private Context2D? context;
+    private bool isDrawing;
+    private double lastX;
+    private double lastY;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SignalRService.StartAsync();
+        await SignalRService.JoinBoardAsync(BoardId);
+        SignalRService.OnDrawEvent += HandleDrawEvent;
+
+        // Load existing events
+        var events = await Http.GetFromJsonAsync<List<DrawEventDto>>($"api/boards/{BoardId}/events");
+        if (events != null)
+        {
+            foreach (var drawEvent in events)
+            {
+                await DrawOnCanvas(drawEvent);
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && canvas != null)
+        {
+            context = await canvas.GetContext2DAsync();
+            await SetupCanvas();
+        }
+    }
+
+    private async Task SetupCanvas()
+    {
+        if (context == null) return;
+
+        await context.SetLineCapAsync(LineCap.Round);
+        await context.SetLineJoinAsync(LineJoin.Round);
+        await context.SetLineWidthAsync(2);
+        await context.SetStrokeStyleAsync("#000000");
+    }
+
+    private async Task HandleDrawEvent(DrawEventDto drawEvent)
+    {
+        await DrawOnCanvas(drawEvent);
+    }
+
+    private async Task DrawOnCanvas(DrawEventDto drawEvent)
+    {
+        if (context == null) return;
+
+        await context.BeginPathAsync();
+        await context.MoveToAsync(drawEvent.X - 1, drawEvent.Y - 1);
+        await context.LineToAsync(drawEvent.X, drawEvent.Y);
+        await context.StrokeAsync();
+    }
+
+    private async Task HandleMouseDown(MouseEventArgs e)
+    {
+        isDrawing = true;
+        lastX = e.OffsetX;
+        lastY = e.OffsetY;
+    }
+
+    private async Task HandleMouseMove(MouseEventArgs e)
+    {
+        if (!isDrawing) return;
+
+        var drawEvent = new DrawEventDto
+        {
+            Id = Guid.NewGuid(),
+            Type = "draw",
+            X = e.OffsetX,
+            Y = e.OffsetY,
+            Color = "#000000",
+            LineWidth = 2,
+            Timestamp = DateTime.UtcNow,
+            UserId = "user1", // Replace with actual user ID
+            BoardId = BoardId
+        };
+
+        await SignalRService.SendDrawEventAsync(drawEvent);
+        await DrawOnCanvas(drawEvent);
+
+        lastX = e.OffsetX;
+        lastY = e.OffsetY;
+    }
+
+    private void HandleMouseUp()
+    {
+        isDrawing = false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await SignalRService.LeaveBoardAsync(BoardId);
+        SignalRService.OnDrawEvent -= HandleDrawEvent;
+        await SignalRService.DisposeAsync();
+    }
+}
+
+<style>
+    .whiteboard-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px;
+    }
+
+    canvas {
+        border: 1px solid #ccc;
+        background-color: white;
+    }
+</style>
