@@ -7,8 +7,15 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// Configure HttpClient
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-builder.Services.AddScoped<SignalRService>();
-builder.Services.AddSingleton<EventStore>();
 
+// Configure logging
+builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+// Register services
+builder.Services.AddSingleton<EventStore>();
+builder.Services.AddScoped<ISignalRService, SignalRService>();
+
+// Build and run the application
 await builder.Build().RunAsync();

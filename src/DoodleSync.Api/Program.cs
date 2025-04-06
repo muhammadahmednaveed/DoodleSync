@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using MyWhiteboard.Api.Data;
+using DoodleSync.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

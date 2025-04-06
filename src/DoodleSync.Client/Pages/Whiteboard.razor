@@ -2,6 +2,7 @@
 @using Excubo.Blazor.Canvas
 @using DoodleSync.Client.Models
 @using DoodleSync.Client.Services
+@using Excubo.Blazor.Canvas.Contexts
 @inject EventStore EventStore
 
 <div class="whiteboard-container">
@@ -9,12 +10,12 @@
         <button class="btn btn-danger" @onclick="ClearCanvas">Clear Canvas</button>
     </div>
     <Canvas @ref="canvas" 
-           width="800" 
-           height="600"
-           @onmousedown="StartDrawing"
-           @onmousemove="Draw"
-           @onmouseup="StopDrawing"
-           @onmouseleave="StopDrawing" />
+    width="800" 
+    height="600"
+    @onmousedown="StartDrawing"
+    @onmousemove="Draw"
+    @onmouseup="StopDrawing"
+    @onmouseleave="StopDrawing" />
 </div>
 
 @code {
@@ -39,19 +40,19 @@
             // Replay existing events
             foreach (var evt in EventStore.Events)
             {
-                await HandleEvent(evt);
+                HandleEvent(evt);
             }
         }
     }
 
     private async Task SetupCanvas()
     {
-        if (context == null) return;
+        if (context is null) return;
 
-        await context.SetLineCapAsync(LineCap.Round);
-        await context.SetLineJoinAsync(LineJoin.Round);
-        await context.SetLineWidthAsync(2);
-        await context.SetStrokeStyleAsync("#000000");
+        await context.LineCapAsync(LineCap.Round);
+        await context.LineJoinAsync(LineJoin.Round);
+        await context.LineWidthAsync(2);
+        await context.StrokeStyleAsync("#000000");
     }
 
     private async Task StartDrawing(MouseEventArgs e)
@@ -75,27 +76,27 @@
         EventStore.AddEvent(new EndDrawingEvent { X = e.OffsetX, Y = e.OffsetY });
     }
 
-    private async Task HandleEvent(DrawingEvent evt)
+    private void HandleEvent(DrawingEvent evt)
     {
-        if (context == null) return;
+        if (context is null) return;
 
         switch (evt)
         {
             case StartDrawingEvent start:
-                await context.BeginPathAsync();
-                await context.MoveToAsync(start.X, start.Y);
+                context.BeginPathAsync();
+                context.MoveToAsync(start.X, start.Y);
                 break;
             case DrawToEvent draw:
-                await context.LineToAsync(draw.X, draw.Y);
-                await context.StrokeAsync();
-                await context.BeginPathAsync();
-                await context.MoveToAsync(draw.X, draw.Y);
+                context.LineToAsync(draw.X, draw.Y);
+                context.StrokeAsync();
+                context.BeginPathAsync();
+                context.MoveToAsync(draw.X, draw.Y);
                 break;
             case EndDrawingEvent:
-                await context.StrokeAsync();
+                context.StrokeAsync();
                 break;
             case ClearCanvasEvent:
-                await context.ClearRectAsync(0, 0, 800, 600);
+                context.ClearRectAsync(0, 0, 800, 600);
                 break;
         }
     }
@@ -119,13 +120,8 @@
         padding: 1rem;
     }
 
-    canvas {
-        border: 1px solid #ccc;
-        cursor: crosshair;
-    }
-
     .toolbar {
         display: flex;
-        gap: 1rem;
+        gap: 0.5rem;
     }
 </style>

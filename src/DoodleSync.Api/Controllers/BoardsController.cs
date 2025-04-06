@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MyWhiteboard.Api.Data;
-using MyWhiteboard.Shared;
+using DoodleSync.Api.Data;
+using DoodleSync.Shared;
 
-namespace MyWhiteboard.Api.Controllers;
+namespace DoodleSync.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

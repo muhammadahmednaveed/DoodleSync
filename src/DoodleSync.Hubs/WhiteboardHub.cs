@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
-using MyWhiteboard.Shared;
+using DoodleSync.Shared;
 
-namespace MyWhiteboard.Hubs;
+namespace DoodleSync.Hubs;
 
 public class WhiteboardHub : Hub
 {

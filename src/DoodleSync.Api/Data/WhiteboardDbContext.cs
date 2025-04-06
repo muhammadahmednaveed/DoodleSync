@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MyWhiteboard.Shared;
+using DoodleSync.Shared;
 
-namespace MyWhiteboard.Api.Data;
+namespace DoodleSync.Api.Data;
 
 public class WhiteboardDbContext : DbContext
 {

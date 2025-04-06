@@ -1,4 +1,4 @@
-namespace MyWhiteboard.Shared;
+namespace DoodleSync.Shared;
 
 public record DrawEventDto
 {
