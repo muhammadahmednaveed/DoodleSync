@@ -1,0 +1,114 @@
+@page "/whiteboard"
+@using DoodleSync.Models
+@using DoodleSync.Services
+@inject EventStore EventStore
+@implements IDisposable
+
+<div class="whiteboard-container">
+    <div class="toolbar">
+        <button class="btn btn-danger" @onclick="ClearCanvas">Clear Canvas</button>
+    </div>
+    <canvas @ref="canvas" 
+            @onmousedown="StartDrawing" 
+            @onmousemove="Draw" 
+            @onmouseup="StopDrawing"
+            @onmouseleave="StopDrawing">
+    </canvas>
+</div>
+
+<style>
+    .whiteboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    canvas {
+        border: 1px solid #ccc;
+        cursor: crosshair;
+    }
+
+    .toolbar {
+        display: flex;
+        gap: 1rem;
+    }
+</style>
+
+@code {
+    private ElementReference canvas;
+    private bool isDrawing = false;
+    private IJSObjectReference? module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/whiteboard.js");
+            await module.InvokeVoidAsync("initCanvas", canvas);
+            EventStore.OnEventAdded += HandleEvent;
+            
+            // Replay existing events
+            foreach (var evt in EventStore.Events)
+            {
+                await HandleEvent(evt);
+            }
+        }
+    }
+
+    private async Task StartDrawing(MouseEventArgs e)
+    {
+        isDrawing = true;
+        var evt = new StartDrawingEvent { X = e.OffsetX, Y = e.OffsetY };
+        EventStore.AddEvent(evt);
+    }
+
+    private async Task Draw(MouseEventArgs e)
+    {
+        if (!isDrawing) return;
+        var evt = new DrawToEvent { X = e.OffsetX, Y = e.OffsetY };
+        EventStore.AddEvent(evt);
+    }
+
+    private async Task StopDrawing(MouseEventArgs e)
+    {
+        if (!isDrawing) return;
+        isDrawing = false;
+        var evt = new EndDrawingEvent { X = e.OffsetX, Y = e.OffsetY };
+        EventStore.AddEvent(evt);
+    }
+
+    private async Task HandleEvent(DrawingEvent evt)
+    {
+        if (module == null) return;
+
+        switch (evt)
+        {
+            case StartDrawingEvent start:
+                await module.InvokeVoidAsync("startDrawing", start.X, start.Y);
+                break;
+            case DrawToEvent draw:
+                await module.InvokeVoidAsync("draw", draw.X, draw.Y);
+                break;
+            case EndDrawingEvent end:
+                await module.InvokeVoidAsync("stopDrawing");
+                break;
+            case ClearCanvasEvent:
+                await module.InvokeVoidAsync("clearCanvas");
+                break;
+        }
+    }
+
+    private void ClearCanvas()
+    {
+        EventStore.Clear();
+    }
+
+    public void Dispose()
+    {
+        if (EventStore != null)
+        {
+            EventStore.OnEventAdded -= HandleEvent;
+        }
+    }
+}
